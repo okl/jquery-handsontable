@@ -437,6 +437,17 @@ Handsontable.Core = function (rootElement, userSettings) {
       return output;
     },
 
+    /** 
+     * NM: Get data at row: use ht's datamap which is already tracking sort order
+     * @param {Number} row
+    */
+    getRow: function (row) {
+      datamap.getVars.row = row;
+      datamap.getVars.prop = null;
+      Handsontable.PluginHooks.run(self, 'beforeGet', datamap.getVars);
+      return priv.settings.data[datamap.getVars.row] ? priv.settings.data[datamap.getVars.row] : null;
+    },
+
     /**
      * Return data as text (tab separated columns)
      * @param {Object} start (Optional) Start selection position
@@ -992,6 +1003,8 @@ Handsontable.Core = function (rootElement, userSettings) {
       priv.selEnd = new Handsontable.SelectionPoint(); //create new empty point to remove the existing one
       instance.view.wt.selections.current.clear();
       instance.view.wt.selections.area.clear();
+      // NM: Clear currentRow/currentCol on deselect
+      instance.view.wt.selections.highlight.clear();
       editproxy.destroy();
       selection.refreshBorders();
       instance.runHooks('afterDeselect');
@@ -1203,7 +1216,8 @@ Handsontable.Core = function (rootElement, userSettings) {
       }
 
       function onPaste(str) {
-        var input = str.replace(/^[\r\n]*/g, '').replace(/[\r\n]*$/g, '') //remove newline from the start and the end of the input
+        // RL: do not remove newlines from start and end of the input as they represent 'empty' cells when pasting from Excel
+        var input = str//.replace(/^[\r\n]*/g, '').replace(/[\r\n]*$/g, ''), //remove newline from the start and the end of the input
           , inputArray = SheetClip.parse(input)
           , coords = grid.getCornerCoords([priv.selStart.coords(), priv.selEnd.coords()])
           , areaStart = coords.TL
@@ -2079,6 +2093,18 @@ Handsontable.Core = function (rootElement, userSettings) {
    */
   this.getDataAtCell = function (row, col) {
     return datamap.get(row, datamap.colToProp(col));
+  };
+
+  /**
+   * NM: Get data at row
+   * Return cell value at `row`, `col`
+   * @param {Number} row
+   * @param {Number} col
+   * @public
+   * @return {string}
+   */
+  this.getDataAtRow = function (row) {
+    return datamap.getRow(row);
   };
 
   /**

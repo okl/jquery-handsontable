@@ -53,14 +53,37 @@ WalkontableSelection.prototype.getCorners = function () {
   return [minRow, minColumn, maxRow, maxColumn];
 };
 
+
+// NM: Selection Helpers start
+WalkontableSelection.prototype.isColumn = function (corners) {
+  corners = corners || this.getCorners();
+  return corners[1] == corners[3];
+};
+
+WalkontableSelection.prototype.isRow = function (corners) {
+  corners = corners || this.getCorners();
+  return corners[0] == corners[2];
+};
+
+WalkontableSelection.prototype.isFullColumn = function (corners, totalRows) {
+  corners = corners || this.getCorners();
+  totalRows = totalRows || this.instance.getSetting('totalRows');
+  return (this.isColumn(corners) && (corners[0] == 0) && (corners[2] == totalRows - 1));
+};
+// NM: Selection Helpers end
+
 WalkontableSelection.prototype.draw = function () {
-  var corners, r, c, source_r, source_c;
+  // NM: additional vars
+  var corners, r, c, source_r, source_c, isMultiCol, isMultiRow;
 
   var visibleRows = this.instance.wtTable.rowStrategy.countVisible()
     , visibleColumns = this.instance.wtTable.columnStrategy.countVisible();
 
   if (this.selected.length) {
     corners = this.getCorners();
+    // NM: NEX-204 Column select handling 
+    isMultiCol = !this.isColumn(corners);
+    isMultiRow = !this.isRow(corners);
 
     for (r = 0; r < visibleRows; r++) {
       for (c = 0; c < visibleColumns; c++) {
@@ -73,7 +96,13 @@ WalkontableSelection.prototype.draw = function () {
         }
         else if (source_r >= corners[0] && source_r <= corners[2]) {
           //selection is in this row
-          this.instance.wtTable.currentCellCache.add(r, c, this.settings.highlightRowClassName);
+          // NM: NEX-204 Multi-row handling
+          if (isMultiRow) {
+            this.instance.wtTable.currentCellCache.remove(r, c, this.settings.highlightRowClassName);
+          } else {
+            this.instance.wtTable.currentCellCache.add(r, c, this.settings.highlightRowClassName);
+          }
+          // this.instance.wtTable.currentCellCache.add(r, c, this.settings.highlightRowClassName);
         }
         else if (source_c >= corners[1] && source_c <= corners[3]) {
           //selection is in this column

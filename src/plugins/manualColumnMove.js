@@ -32,10 +32,15 @@ function HandsontableManualColumnMove() {
       if (startCol < endCol) {
         endCol--;
       }
-      if (instance.getSettings().rowHeaders) {
-        startCol--;
-        endCol--;
+      // NM: When viewport scrolled, skips backwards a column
+      if (!instance.getSettings().rowHeaders) {
+        startCol++;
+        endCol++;
       }
+      // if (instance.getSettings().rowHeaders) {
+      //   startCol--;
+      //   endCol--;
+      // }
       instance.manualColumnPositions.splice(endCol, 0, instance.manualColumnPositions.splice(startCol, 1)[0]);
       $('.manualColumnMover.active').removeClass('active');
       pressed = false;
@@ -43,6 +48,8 @@ function HandsontableManualColumnMove() {
       instance.view.render(); //updates all
       ghostStyle.display = 'none';
       instance.runHooks('afterColumnMove', startCol, endCol);
+      // NM: event hook
+      instance.rootElement.trigger($.Event("manualColumnMove.handsontable", { columnPositions: instance.manualColumnPositions }));
     }
   });
 
@@ -58,7 +65,9 @@ function HandsontableManualColumnMove() {
 
         var $resizer = $(e.target);
         var th = $resizer.closest('th');
-        startCol = th.index();
+        // startCol = th.index();
+        // NM: attach correct col index for virtual rendered out of original viewport
+        startCol = $resizer.attr('rel');
         pressed = true;
         startX = e.pageX;
 
@@ -76,6 +85,8 @@ function HandsontableManualColumnMove() {
           endCol = $(this).index();
           var $hover = $ths.eq(endCol).find('.manualColumnMover').addClass('active');
           $ths.not($hover).removeClass('active');
+          // NM: attach correct col index for virtual rendered out of original viewport
+          endCol = $hover.attr('rel');
         }
       });
     }
@@ -96,6 +107,8 @@ function HandsontableManualColumnMove() {
     if (this.getSettings().manualColumnMove) {
       var DIV = document.createElement('DIV');
       DIV.className = 'manualColumnMover';
+      // NM: attach correct col index for virtual rendered out of original viewport
+      DIV.setAttribute('rel', col);
       TH.firstChild.appendChild(DIV);
     }
   };

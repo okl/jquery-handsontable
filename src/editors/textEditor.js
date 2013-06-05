@@ -286,8 +286,10 @@ HandsontableTextEditorClass.prototype.refreshDimensions = function () {
     }
   }
 
+
+  // RL: fix cell edit height by setting it to the max of 200 or the height of its read-only height
   this.$textarea.autoResize({
-    maxHeight: 200,
+    maxHeight: Math.max(200, height), //200
     minHeight: height,
     minWidth: width,
     maxWidth: Math.max(168, width),
@@ -295,7 +297,13 @@ HandsontableTextEditorClass.prototype.refreshDimensions = function () {
     extraSpace: 0
   });
 
+  // RL: hack to fix cell edit height on long text
+  this.$textarea.css('height', Math.min(window.innerHeight - 40, height));
+    
   this.textareaParentStyle.display = 'block';
+
+  // NM: 0.8.21 merge: parent overflow
+  this.textareaParentStyle.overflow = 'visible';
 };
 
 HandsontableTextEditorClass.prototype.finishEditing = function (isCancelled, ctrlDown) {
@@ -337,6 +345,12 @@ Handsontable.TextEditor = function (instance, td, row, col, prop, value, cellPro
   if (!instance.textEditor) {
     instance.textEditor = new HandsontableTextEditorClass(instance);
   }
+    
+  // NM: Reference to cell meta-properties (col restrictions)
+  // Todo: pass this to constructor?
+  instance.textEditor.meta = instance.getCellMeta(row, col);
+  instance.textEditor.limit = !!instance.textEditor.meta['limit'] ? instance.textEditor.meta['limit'].value : null;
+  
   instance.textEditor.bindTemporaryEvents(td, row, col, prop, value, cellProperties);
   return function (isCancelled) {
     instance.textEditor.finishEditing(isCancelled);

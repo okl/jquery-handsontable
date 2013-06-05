@@ -295,6 +295,10 @@ WalkontableTable.prototype._doDraw = function () {
     , totalRows = this.instance.getSetting('totalRows')
     , totalColumns = this.instance.getSetting('totalColumns')
     , displayTds
+    // NM: offset-based vars
+    , offsetCol = this.instance.getSetting('offsetColumn')
+    , fixedColCount = this.instance.getSetting('fixedColumnsLeft')
+    , fixedColClass = 'fixed-cell-shadow'
     , rowHeaders = this.instance.getSetting('rowHeaders')
     , displayThs = rowHeaders.length
     , TR
@@ -306,6 +310,7 @@ WalkontableTable.prototype._doDraw = function () {
 
   var noPartial = false;
   if (this.verticalRenderReverse) {
+    console.log('verticalRenderReverse');
     if (offsetRow === totalRows - 1) {
       noPartial = true;
     }
@@ -379,7 +384,14 @@ WalkontableTable.prototype._doDraw = function () {
         else {
           TD = TD.nextSibling; //http://jsperf.com/nextsibling-vs-indexed-childnodes
         }
-        TD.className = '';
+        // NM: Fixed cell rendering
+        if ((offsetCol > 0) && (c == fixedColCount + 1)) {
+          console.log('offsetcol && greater than count');
+          TD.className = fixedColClass;
+        } else {
+          console.log('not fixed col rendering');
+          TD.className = '';
+        }
         TD.removeAttribute('style');
         this.instance.getSetting('cellRenderer', source_r, source_c, TD);
         if (this.hasEmptyCellProblem && TD.innerHTML === '') { //IE7
