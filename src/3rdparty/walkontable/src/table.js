@@ -12,6 +12,9 @@ function WalkontableTable(instance) {
   this.wtDom = this.instance.wtDom;
   this.wtDom.removeTextNodes(this.TABLE);
 
+  // NM: Fixed Cell Class
+  this.fixedColClass = 'fixed-cell-shadow';
+  
   this.hasEmptyCellProblem = ($.browser.msie && (parseInt($.browser.version, 10) <= 7));
   this.hasCellSpacingProblem = ($.browser.msie && (parseInt($.browser.version, 10) <= 7));
 
@@ -187,6 +190,9 @@ WalkontableTable.prototype.adjustAvailableNodes = function () {
     , rowHeaders = this.instance.getSetting('rowHeaders')
     , displayThs = rowHeaders.length
     , columnHeaders = this.instance.getSetting('columnHeaders')
+    // NM: offset-based vars
+    , offsetCol = this.instance.getSetting('offsetColumn')
+    , fixedColCount = this.instance.getSetting('fixedColumnsLeft')
     , TR
     , TD
     , c;
@@ -250,6 +256,12 @@ WalkontableTable.prototype.adjustAvailableNodes = function () {
 
   for (c = 0; c < displayTds; c++) {
     if (columnHeaders.length) {
+      // NM: Fixed cell rendering
+      if ((offsetCol > 0) && (c == fixedColCount)) {
+        TR.childNodes[displayThs + c].className += (" " + this.fixedColClass);
+      } else {
+        TR.childNodes[displayThs + c].className = "";
+      }
       columnHeaders[0](this.columnFilter.visibleToSource(c), TR.childNodes[displayThs + c]);
     }
   }
@@ -294,6 +306,9 @@ WalkontableTable.prototype._doDraw = function () {
     , offsetRow = this.instance.getSetting('offsetRow')
     , totalRows = this.instance.getSetting('totalRows')
     , totalColumns = this.instance.getSetting('totalColumns')
+    // NM: offset-based vars
+    , offsetCol = this.instance.getSetting('offsetColumn')
+    , fixedColCount = this.instance.getSetting('fixedColumnsLeft')
     , displayTds
     , rowHeaders = this.instance.getSetting('rowHeaders')
     , displayThs = rowHeaders.length
@@ -385,6 +400,10 @@ WalkontableTable.prototype._doDraw = function () {
         if (this.hasEmptyCellProblem && TD.innerHTML === '') { //IE7
           TD.innerHTML = '&nbsp;';
         }
+        // NM: Fixed cell rendering
+        if ((offsetCol > 0) && (c == fixedColCount)) {
+          TD.className += (" " + this.fixedColClass);
+        }
       }
 
       offsetRow = this.instance.getSetting('offsetRow'); //refresh the value
@@ -453,6 +472,33 @@ WalkontableTable.prototype._doDraw = function () {
 WalkontableTable.prototype.refreshPositions = function (selectionsOnly) {
   this.refreshHiderDimensions();
   this.refreshSelections(selectionsOnly);
+  // NM: Custom Classnames
+  this.refreshCustomClassNames();
+};
+
+// NM: Custom Classnames
+WalkontableTable.prototype.refreshCustomClassNames = function () {
+  var vr
+    , r
+    , vc
+    , c
+    , s
+    , slen
+    , classNames = []
+    , visibleRows = this.rowStrategy.countVisible()
+    , visibleColumns = this.columnStrategy.countVisible();
+
+  for (vr = 0; vr < visibleRows; vr++) {
+    for (vc = 0; vc < visibleColumns; vc++) {
+      r = this.rowFilter.visibleToSource(vr);
+      c = this.columnFilter.visibleToSource(vc);
+      if (this.instance.wtSettings.settings.customClassHandler) {
+        this.instance.wtSettings.settings.customClassHandler(r, c, this.getCell([r, c]));
+      };
+
+    }
+  }
+
 };
 
 WalkontableTable.prototype.refreshSelections = function (selectionsOnly) {

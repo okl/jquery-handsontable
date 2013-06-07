@@ -146,6 +146,8 @@ Handsontable.TableView = function (instance) {
   var walkontableConfig = {
     table: table,
     stretchH: this.settings.stretchH,
+    // NM: custom class handler for WtTable
+    customClassHandler: this.settings.customClassHandler,
     data: instance.getDataAtCell,
     totalRows: instance.countRows,
     totalColumns: instance.countCols,
@@ -182,7 +184,8 @@ Handsontable.TableView = function (instance) {
       area: {
         className: 'area',
         border: {
-          width: 1,
+          // NM: Increase area border
+          width: 2,
           color: '#89AFF9',
           style: 'solid',
           cornerVisible: function () {
@@ -305,7 +308,8 @@ Handsontable.TableView.prototype.beforeRender = function (force) {
 
 Handsontable.TableView.prototype.render = function () {
   this.wt.draw(!this.instance.forceFullRender);
-  this.instance.rootElement.triggerHandler('render.handsontable');
+  // NM: add event data
+  this.instance.rootElement.triggerHandler('render.handsontable', {forceFullRender: this.instance.forceFullRender, rowOffset: this.instance.rowOffset()});
   if (this.instance.forceFullRender) {
     this.instance.PluginHooks.run('afterRender');
   }

@@ -43,6 +43,10 @@ function WalkontableSettings(instance, settings) {
     beforeDraw: null,
     onDraw: null,
 
+    //rendering
+    // NM: customClassHandler
+    customClassHandler: null,
+
     //constants
     scrollbarWidth: 10,
     scrollbarHeight: 10
@@ -121,6 +125,8 @@ WalkontableSettings.prototype.rowHeight = function (row) {
   return 20;
 };
 
+// RL: NEX-139 Increase maximum column width
+// (Previously: 200)
 WalkontableSettings.prototype.columnWidth = function (column) {
-  return Math.min(200, this._getSetting('columnWidth', column));
+  return Math.min(500, this._getSetting('columnWidth', column));
 };

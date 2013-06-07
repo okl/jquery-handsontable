@@ -94,6 +94,10 @@ function HandsontableManualColumnResize() {
   var setManualSize = function (col, width) {
     width = Math.max(width, 20);
     width = Math.min(width, 500);
+    // NM: if manual column moved, use that as the col index
+    if (instance['manualColumnPositions'] && instance['manualColumnPositions'][col]) {
+      col = instance['manualColumnPositions'][col];
+    }
     instance.manualColumnWidths[col] = width;
     return width;
   };
