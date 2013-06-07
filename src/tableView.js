@@ -52,8 +52,11 @@ Handsontable.TableView = function (instance) {
     var next = event.target;
 
     if (next !== that.wt.wtTable.spreader) { //immediate click on "spreader" means click on the right side of vertical scrollbar
-      while (next !== null && next !== document.documentElement) {
+      while (next !== document.documentElement) {
         //X-HANDSONTABLE is the tag name in Web Components version of HOT. Removal of this breaks cell selection
+        if(next === null) {
+          return; //click on something that was a row but now is detached (possibly because your click triggered a rerender)
+        }
         if (next === instance.rootElement[0] || next.nodeName === 'X-HANDSONTABLE' || next.id === 'context-menu-layer' || $(next).is('.context-menu-list') || $(next).is('.typeahead li')) {
           return; //click inside container
         }
@@ -143,6 +146,8 @@ Handsontable.TableView = function (instance) {
   var walkontableConfig = {
     table: table,
     stretchH: this.settings.stretchH,
+    // NM: custom class handler for WtTable
+    customClassHandler: this.settings.customClassHandler,
     data: instance.getDataAtCell,
     totalRows: instance.countRows,
     totalColumns: instance.countCols,
@@ -245,7 +250,7 @@ Handsontable.TableView = function (instance) {
     }
   };
 
-  instance.runHooks('beforeInitWalkontable', walkontableConfig);
+  instance.PluginHooks.run('beforeInitWalkontable', walkontableConfig);
 
   this.wt = new Walkontable(walkontableConfig);
 
@@ -295,7 +300,7 @@ Handsontable.TableView.prototype.getHeight = function () {
 
 Handsontable.TableView.prototype.beforeRender = function (force) {
   if (force) {
-    this.instance.runHooks('beforeRender');
+    this.instance.PluginHooks.run('beforeRender');
     this.wt.update('width', this.getWidth());
     this.wt.update('height', this.getHeight());
   }
@@ -303,9 +308,10 @@ Handsontable.TableView.prototype.beforeRender = function (force) {
 
 Handsontable.TableView.prototype.render = function () {
   this.wt.draw(!this.instance.forceFullRender);
-  this.instance.rootElement.triggerHandler('render.handsontable');
+  // NM: add event data
+  this.instance.rootElement.triggerHandler('render.handsontable', {forceFullRender: this.instance.forceFullRender, rowOffset: this.instance.rowOffset()});
   if (this.instance.forceFullRender) {
-    this.instance.runHooks('afterRender');
+    this.instance.PluginHooks.run('afterRender');
   }
   this.instance.forceFullRender = false;
 };
@@ -372,5 +378,5 @@ Handsontable.TableView.prototype.appendColHeader = function (col, TH) {
     TH.removeChild(TH.firstChild); //empty TH node
   }
   TH.appendChild(DIV);
-  this.instance.runHooks('afterGetColHeader', col, TH);
+  this.instance.PluginHooks.run('afterGetColHeader', col, TH);
 };

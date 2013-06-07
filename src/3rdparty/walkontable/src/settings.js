@@ -43,6 +43,10 @@ function WalkontableSettings(instance, settings) {
     beforeDraw: null,
     onDraw: null,
 
+    //rendering
+    // NM: customClassHandler
+    customClassHandler: null,
+
     //constants
     scrollbarWidth: 10,
     scrollbarHeight: 10

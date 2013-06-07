@@ -12,6 +12,9 @@ function WalkontableTable(instance) {
   this.wtDom = this.instance.wtDom;
   this.wtDom.removeTextNodes(this.TABLE);
 
+  // NM: Fixed Cell Class
+  this.fixedColClass = 'fixed-cell-shadow';
+  
   this.hasEmptyCellProblem = ($.browser.msie && (parseInt($.browser.version, 10) <= 7));
   this.hasCellSpacingProblem = ($.browser.msie && (parseInt($.browser.version, 10) <= 7));
 
@@ -169,7 +172,7 @@ WalkontableTable.prototype.refreshStretching = function () {
   var rowHeightFn = function (i, TD) {
     var source_r = that.rowFilter.visibleToSource(i);
     if (source_r < totalRows) {
-      if (that.verticalRenderReverse) {
+      if (that.verticalRenderReverse && i === 0) {
         return that.wtDom.outerHeight(TD) - 1;
       }
       else {
@@ -187,6 +190,9 @@ WalkontableTable.prototype.adjustAvailableNodes = function () {
     , rowHeaders = this.instance.getSetting('rowHeaders')
     , displayThs = rowHeaders.length
     , columnHeaders = this.instance.getSetting('columnHeaders')
+    // NM: offset-based vars
+    , offsetCol = this.instance.getSetting('offsetColumn')
+    , fixedColCount = this.instance.getSetting('fixedColumnsLeft')
     , TR
     , TD
     , c;
@@ -250,6 +256,12 @@ WalkontableTable.prototype.adjustAvailableNodes = function () {
 
   for (c = 0; c < displayTds; c++) {
     if (columnHeaders.length) {
+      // NM: Fixed cell rendering
+      if ((offsetCol > 0) && (c == fixedColCount)) {
+        TR.childNodes[displayThs + c].className += (" " + this.fixedColClass);
+      } else {
+        TR.childNodes[displayThs + c].className = "";
+      }
       columnHeaders[0](this.columnFilter.visibleToSource(c), TR.childNodes[displayThs + c]);
     }
   }
@@ -294,6 +306,9 @@ WalkontableTable.prototype._doDraw = function () {
     , offsetRow = this.instance.getSetting('offsetRow')
     , totalRows = this.instance.getSetting('totalRows')
     , totalColumns = this.instance.getSetting('totalColumns')
+    // NM: offset-based vars
+    , offsetCol = this.instance.getSetting('offsetColumn')
+    , fixedColCount = this.instance.getSetting('fixedColumnsLeft')
     , displayTds
     // NM: offset-based vars
     , offsetCol = this.instance.getSetting('offsetColumn')
@@ -310,8 +325,7 @@ WalkontableTable.prototype._doDraw = function () {
 
   var noPartial = false;
   if (this.verticalRenderReverse) {
-    console.log('verticalRenderReverse');
-    if (offsetRow === totalRows - 1) {
+    if (offsetRow === totalRows - this.rowFilter.fixedCount - 1) {
       noPartial = true;
     }
     else {
@@ -327,13 +341,13 @@ WalkontableTable.prototype._doDraw = function () {
     var first = true;
 
     while (source_r < totalRows && source_r >= 0) {
-      if (r >= this.tbodyChildrenLength || this.verticalRenderReverse) {
+      if (r >= this.tbodyChildrenLength || (this.verticalRenderReverse && r >= this.rowFilter.fixedCount)) {
         TR = document.createElement('TR');
         for (c = 0; c < displayThs; c++) {
           TR.appendChild(document.createElement('TH'));
         }
-        if (this.verticalRenderReverse) {
-          this.TBODY.insertBefore(TR, this.TBODY.firstChild);
+        if (this.verticalRenderReverse && r >= this.rowFilter.fixedCount) {
+          this.TBODY.insertBefore(TR, this.TBODY.childNodes[this.rowFilter.fixedCount] || this.TBODY.firstChild);
         }
         else {
           this.TBODY.appendChild(TR);
@@ -397,23 +411,26 @@ WalkontableTable.prototype._doDraw = function () {
         if (this.hasEmptyCellProblem && TD.innerHTML === '') { //IE7
           TD.innerHTML = '&nbsp;';
         }
+        // NM: Fixed cell rendering
+        if ((offsetCol > 0) && (c == fixedColCount)) {
+          TD.className += (" " + this.fixedColClass);
+        }
       }
+
+      offsetRow = this.instance.getSetting('offsetRow'); //refresh the value
 
       //after last column is rendered, check if last cell is fully displayed
       if (this.verticalRenderReverse && noPartial) {
         if (-this.wtDom.outerHeight(TR.firstChild) < this.rowStrategy.remainingSize) {
-            this.TBODY.removeChild(TR);
-            this.instance.update('offsetRow', source_r + 1);
-            this.tbodyChildrenLength--;
-            this.rowFilter.readSettings(this.instance);
-            break;
+          this.TBODY.removeChild(TR);
+          this.instance.update('offsetRow', offsetRow + 1);
+          this.tbodyChildrenLength--;
+          this.rowFilter.readSettings(this.instance);
+          break;
 
         }
         else {
           this.rowStrategy.add(r, TD);
-        }
-        if (source_r === 0) {
-          break;
         }
       }
       else {
@@ -424,8 +441,11 @@ WalkontableTable.prototype._doDraw = function () {
         }
       }
 
-      if (this.verticalRenderReverse) {
-        this.instance.update('offsetRow', source_r - 1);
+      if (this.verticalRenderReverse && r >= this.rowFilter.fixedCount) {
+        if (offsetRow === 0) {
+          break;
+        }
+        this.instance.update('offsetRow', offsetRow - 1);
         this.rowFilter.readSettings(this.instance);
       }
       else {
@@ -463,6 +483,33 @@ WalkontableTable.prototype._doDraw = function () {
 WalkontableTable.prototype.refreshPositions = function (selectionsOnly) {
   this.refreshHiderDimensions();
   this.refreshSelections(selectionsOnly);
+  // NM: Custom Classnames
+  this.refreshCustomClassNames();
+};
+
+// NM: Custom Classnames
+WalkontableTable.prototype.refreshCustomClassNames = function () {
+  var vr
+    , r
+    , vc
+    , c
+    , s
+    , slen
+    , classNames = []
+    , visibleRows = this.rowStrategy.countVisible()
+    , visibleColumns = this.columnStrategy.countVisible();
+
+  for (vr = 0; vr < visibleRows; vr++) {
+    for (vc = 0; vc < visibleColumns; vc++) {
+      r = this.rowFilter.visibleToSource(vr);
+      c = this.columnFilter.visibleToSource(vc);
+      if (this.instance.wtSettings.settings.customClassHandler) {
+        this.instance.wtSettings.settings.customClassHandler(r, c, this.getCell([r, c]));
+      };
+
+    }
+  }
+
 };
 
 WalkontableTable.prototype.refreshSelections = function (selectionsOnly) {

@@ -53,7 +53,6 @@ WalkontableSelection.prototype.getCorners = function () {
   return [minRow, minColumn, maxRow, maxColumn];
 };
 
-
 // NM: Selection Helpers start
 WalkontableSelection.prototype.isColumn = function (corners) {
   corners = corners || this.getCorners();

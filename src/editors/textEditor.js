@@ -39,7 +39,7 @@ HandsontableTextEditorClass.prototype.bindEvents = function () {
   this.$textareaParent.off('.editor').on('keydown.editor', function (event) {
     //if we are here then isCellEdited === true
 
-    that.instance.runHooks('beforeKeyDown', event);
+    that.instance.PluginHooks.run('beforeKeyDown', event);
     if(event.isImmediatePropagationStopped()) { //event was cancelled in beforeKeyDown
       return;
     }
@@ -285,7 +285,6 @@ HandsontableTextEditorClass.prototype.refreshDimensions = function () {
       width -= 1;
     }
   }
-
 
   // RL: fix cell edit height by setting it to the max of 200 or the height of its read-only height
   this.$textarea.autoResize({
