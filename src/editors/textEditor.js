@@ -51,6 +51,12 @@ HandsontableTextEditorClass.prototype.bindEvents = function () {
       event.stopImmediatePropagation();
       return;
     }
+    // NM: NEX-212: character limits on columns as specified by column hash
+    else if (!ctrlDown && Handsontable.helper.isPrintableChar(event.keyCode) && that.limit && that.limit < (that.TEXTAREA.value.length + 1)) {
+      var msg = 'This column has a '+that.limit+' character limit.';
+      alert(msg);
+      event.stopImmediatePropagation();
+    }
 
     switch (event.keyCode) {
       case 38: /* arrow up */
