@@ -428,7 +428,7 @@ Handsontable.Core = function (rootElement, userSettings) {
     getRow: function (row) {
       datamap.getVars.row = row;
       datamap.getVars.prop = null;
-      Handsontable.PluginHooks.run(self, 'beforeGet', datamap.getVars);
+      instance.PluginHooks.run('beforeGet', datamap.getVars);
       return priv.settings.data[datamap.getVars.row] ? priv.settings.data[datamap.getVars.row] : null;
     },
 
@@ -2087,7 +2087,7 @@ Handsontable.Core = function (rootElement, userSettings) {
    * @public
    * @return {string}
    */
-  this.getDataAtRow = function (row) {
+  this.getDataFromRow = function (row) {
     return datamap.getRow(row);
   };
 
