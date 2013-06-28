@@ -256,6 +256,10 @@ WalkontableTable.prototype.adjustAvailableNodes = function () {
 
   for (c = 0; c < displayTds; c++) {
     if (columnHeaders.length) {
+
+      // NM: NEX-313 collapsed col header widths when no data
+      this.COLGROUP.childNodes[c].style.width = this.instance.getSetting('columnWidth', c - 1) + 'px';
+      
       // NM: Fixed cell rendering
       if ((offsetCol > 0) && (c == fixedColCount)) {
         TR.childNodes[displayThs + c].className += (" " + this.fixedColClass);
